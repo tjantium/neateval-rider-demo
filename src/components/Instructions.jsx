@@ -37,6 +37,41 @@ function Instructions() {
           have a maximum sprint power of 750W, but this decreases linearly with battery level.
         </p>
       </div>
+
+      <div className="instructions-section">
+        <h3>Credits & Citations</h3>
+        
+        <div className="credits-subsection">
+          <h4>Inspiration</h4>
+          <p>
+            This project is inspired by and is a replication/tweak of the original <strong>Cycling Neuroevolution</strong> simulation 
+            created by <strong>Andrew Davison</strong> (Imperial College London, 2025).
+          </p>
+          <ul className="credits-links">
+            <li>
+              <a href="https://www.doc.ic.ac.uk/~ajd/Cycling/" target="_blank" rel="noopener noreferrer">
+                Original Demo
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/AjdDavison/status/2006038878986129765" target="_blank" rel="noopener noreferrer">
+                Original Twitter Post
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div className="credits-subsection">
+          <h4>Author</h4>
+          <p>
+            <strong>Thiwanka Jayasiri</strong> - For educational purposes
+          </p>
+          <p>
+            This repository is a reimplementation and modification of Andrew Davison's cycling neuroevolution simulation, 
+            adapted to use NEAT (NeuroEvolution of Augmenting Topologies) for neural network evolution.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

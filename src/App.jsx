@@ -138,6 +138,34 @@ function App() {
     }).catch(err => console.error('Error forcing evolution:', err))
   }, [])
 
+  const resetSimulation = useCallback(async () => {
+    try {
+      await fetch('/api/controls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reset: true })
+      })
+      setSelectedRiderIndex(null)
+      // Fetch state after reset to get new terrain and riders
+      setTimeout(() => fetchState(), 100)
+    } catch (err) {
+      console.error('Error resetting simulation:', err)
+    }
+  }, [fetchState])
+
+  // Reset simulation on page load/reload
+  useEffect(() => {
+    // Detect page reload using Navigation Timing API
+    const navEntry = performance.getEntriesByType('navigation')[0]
+    const isReload = navEntry?.type === 'reload' || 
+                     (performance.navigation && performance.navigation.type === 1)
+    
+    // Reset simulation on reload (Ctrl+R / Cmd+R)
+    if (isReload) {
+      resetSimulation()
+    }
+  }, [resetSimulation]) // Include resetSimulation in dependencies
+
   // Set up polling for simulation state
   useEffect(() => {
     // Fetch initial state
@@ -184,15 +212,6 @@ function App() {
       window.removeEventListener('keydown', handleKeyPress)
     }
   }, [selectRider, forceEvolution]) // Re-run when functions change
-
-  const resetSimulation = async () => {
-    await fetch('/api/controls', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reset: true })
-    })
-    setSelectedRiderIndex(null)
-  }
 
   if (error) {
     return (
