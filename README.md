@@ -2,6 +2,10 @@
 
 An interactive simulation demonstrating neuroevolution applied to cycling races using NEAT (NeuroEvolution of Augmenting Topologies).
 
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ## Features
 
 - Real-time cycling race simulation with physics-based mechanics
