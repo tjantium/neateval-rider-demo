@@ -1,0 +1,15 @@
+.race-view {
+  background: white;
+  border: 2px solid #000;
+  border-radius: 4px;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.race-canvas {
+  display: block;
+  border: 1px solid #ccc;
+  background: #f5f5f5;
+}
+

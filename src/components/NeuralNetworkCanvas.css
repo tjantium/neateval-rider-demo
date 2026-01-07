@@ -1,0 +1,12 @@
+.neural-network-canvas {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.network-canvas {
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 4px;
+}
+

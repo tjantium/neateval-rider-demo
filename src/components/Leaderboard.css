@@ -1,0 +1,81 @@
+.leaderboard {
+  background: white;
+  border: 2px solid #000;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.leaderboard h2 {
+  font-size: 1em;
+  margin-bottom: 6px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.generation-info {
+  text-align: center;
+  font-size: 0.85em;
+  color: #666;
+  margin-bottom: 8px;
+  padding: 4px;
+  background: #f5f5f5;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leaderboard-item {
+  display: grid;
+  grid-template-columns: 25px 1fr auto;
+  align-items: center;
+  padding: 6px 8px;
+  padding-right: 35px; /* Extra space for eye icon */
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9em;
+  position: relative;
+}
+
+.leaderboard-item:hover {
+  background-color: #f0f0f0 !important;
+  transform: scale(1.02);
+}
+
+.leaderboard-item.selected {
+  border: 3px solid #2196f3 !important;
+  box-shadow: 0 0 10px rgba(33, 150, 243, 0.8), inset 0 0 10px rgba(33, 150, 243, 0.2);
+  transform: scale(1.03);
+  font-weight: bold;
+  position: relative;
+}
+
+.leaderboard-item.selected::before {
+  content: '👁️';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2em;
+}
+
+.leaderboard-rank {
+  font-weight: bold;
+}
+
+.leaderboard-name {
+  font-weight: 500;
+}
+
+.leaderboard-distance {
+  font-size: 0.85em;
+  color: #666;
+  font-weight: 500;
+}
+

@@ -1,0 +1,98 @@
+.control-panel {
+  background: white;
+  border: 2px solid #000;
+  border-radius: 4px;
+  padding: 15px;
+}
+
+.control-panel h2 {
+  margin-bottom: 15px;
+  text-align: center;
+  font-size: 1.2em;
+}
+
+.control-section {
+  margin-bottom: 20px;
+}
+
+.control-section h3 {
+  font-size: 1em;
+  margin-bottom: 10px;
+  color: #666;
+}
+
+.control-item {
+  margin-bottom: 15px;
+}
+
+.control-item label {
+  display: block;
+  font-size: 0.9em;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.control-item input[type="range"] {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #ddd;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.control-item input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #6a1b9a;
+  cursor: pointer;
+}
+
+.control-item input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #6a1b9a;
+  cursor: pointer;
+  border: none;
+}
+
+.control-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.action-button {
+  padding: 10px;
+  font-size: 1em;
+  font-weight: bold;
+  border: 2px solid #000;
+  border-radius: 4px;
+  background: #6a1b9a;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-button:hover {
+  background: #7b1fa2;
+  transform: scale(1.05);
+}
+
+.action-button:active {
+  transform: scale(0.95);
+}
+
+.reset-button {
+  background: #f44336;
+}
+
+.reset-button:hover {
+  background: #d32f2f;
+}
+

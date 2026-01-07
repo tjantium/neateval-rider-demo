@@ -1,0 +1,32 @@
+.instructions {
+  background: white;
+  border: 2px solid #000;
+  border-radius: 4px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.instructions-section {
+  margin-bottom: 20px;
+}
+
+.instructions-section:last-child {
+  margin-bottom: 0;
+}
+
+.instructions-section h3 {
+  font-size: 1.1em;
+  margin-bottom: 10px;
+  color: #6a1b9a;
+}
+
+.instructions-section p {
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.instructions-section p:last-child {
+  margin-bottom: 0;
+}
+
