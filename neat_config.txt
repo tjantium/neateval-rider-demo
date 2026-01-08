@@ -28,9 +28,9 @@ bias_replace_rate       = 0.1
 compatibility_disjoint_coefficient = 1.0
 compatibility_weight_coefficient  = 0.5
 
-# connection add/remove rates
-conn_add_prob           = 0.5
-conn_delete_prob        = 0.5
+# connection add/remove rates (increased for more visible topology evolution)
+conn_add_prob           = 0.6
+conn_delete_prob        = 0.4
 
 # connection enable options
 enabled_default         = True
@@ -39,9 +39,9 @@ enabled_mutate_rate     = 0.01
 feed_forward            = True
 initial_connection      = full
 
-# node add/remove rates
-node_add_prob           = 0.2
-node_delete_prob        = 0.2
+# node add/remove rates (increased for more visible topology evolution)
+node_add_prob           = 0.3
+node_delete_prob        = 0.15
 
 # network parameters
 num_inputs              = 7

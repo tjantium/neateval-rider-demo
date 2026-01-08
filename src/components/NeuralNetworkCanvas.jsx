@@ -34,8 +34,19 @@ function NeuralNetworkCanvas({ networkInfo, generation }) {
       ctx.fillText(`Generation: ${generation}`, 10, 20)
       
       // Show topology info (NEAT feature)
-      if (weights.num_hidden !== undefined) {
-        ctx.fillText(`Hidden Nodes: ${weights.num_hidden} (NEAT - topology evolves)`, 10, 35)
+      const topologyStats = networkInfo.topology_stats || {}
+      const numHidden = topologyStats.num_hidden !== undefined ? topologyStats.num_hidden : (weights.num_hidden !== undefined ? weights.num_hidden : 0)
+      const numConnections = topologyStats.num_connections || 0
+      
+      ctx.fillText(`Hidden Nodes: ${numHidden} | Connections: ${numConnections}`, 10, 35)
+      
+      // Show topology evolution status
+      if (generation > 0) {
+        ctx.fillStyle = numHidden > 0 ? '#4caf50' : '#ff9800'
+        ctx.fillText(numHidden > 0 ? '✓ Topology evolving!' : 'Starting minimal (0 hidden)', 10, 50)
+      } else {
+        ctx.fillStyle = '#666'
+        ctx.fillText('Initial generation (minimal topology)', 10, 50)
       }
     }
     const inputHiddenWeights = weights.input_hidden || []

@@ -207,6 +207,21 @@ class Simulation:
                         print(f"Warning: Could not calculate weight changes: {e}")
                         weight_changes = None
                     
+                    # Get topology statistics for this rider
+                    topology_stats = {
+                        'num_hidden': current_weights.get('num_hidden', 0),
+                        'num_connections': 0
+                    }
+                    
+                    # Count total connections (input->hidden, hidden->output, input->output)
+                    if 'input_hidden' in current_weights:
+                        for row in current_weights['input_hidden']:
+                            topology_stats['num_connections'] += sum(1 for w in row if abs(w) > 0.01)
+                    if 'hidden_output' in current_weights:
+                        topology_stats['num_connections'] += sum(1 for w in current_weights['hidden_output'] if abs(w) > 0.01)
+                    if 'input_output' in current_weights:
+                        topology_stats['num_connections'] += sum(1 for w in current_weights['input_output'] if abs(w) > 0.01)
+                    
                     selected_network_info = {
                         'inputs': inputs,
                         'input_names': ['Speed', 'Power', 'Anaerobic Battery', 'Avg Gradient 100m', 
@@ -215,7 +230,8 @@ class Simulation:
                         'hidden_values': hidden_values,
                         'output': selected_rider.network.forward(inputs),
                         'weights': current_weights,
-                        'weight_changes': weight_changes  # Show what changed from previous generation
+                        'weight_changes': weight_changes,  # Show what changed from previous generation
+                        'topology_stats': topology_stats  # Show topology information
                     }
                 except Exception as e:
                     # If there's an error generating network info, log it but don't crash

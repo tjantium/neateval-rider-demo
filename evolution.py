@@ -98,6 +98,9 @@ class NEATEvolution:
         Returns:
             List of new Rider objects
         """
+        # Track topology before evolution
+        prev_topology_stats = self._get_topology_stats()
+        
         # Use NEAT's reproduction to create next generation
         # This handles speciation, crossover, and mutation
         self.population.species.speciate(self.config, self.population.population, self.generation)
@@ -109,8 +112,64 @@ class NEATEvolution:
         )
         self.generation += 1
         
+        # Track topology after evolution
+        new_topology_stats = self._get_topology_stats()
+        
+        # Log topology changes
+        self._log_topology_changes(prev_topology_stats, new_topology_stats)
+        
         # Create new riders from evolved population
         return self.create_riders_from_population()
+    
+    def _get_topology_stats(self):
+        """Get statistics about current population topology."""
+        stats = {
+            'hidden_nodes': [],
+            'connections': [],
+            'avg_hidden': 0.0,
+            'avg_connections': 0.0,
+            'min_hidden': 0,
+            'max_hidden': 0
+        }
+        
+        for genome_id, genome in self.population.population.items():
+            # Count hidden nodes (node IDs >= 8)
+            hidden_nodes = [node_id for node_id in genome.nodes.keys() if node_id >= 8]
+            num_hidden = len(hidden_nodes)
+            
+            # Count enabled connections
+            num_connections = sum(1 for conn in genome.connections.values() if conn.enabled)
+            
+            stats['hidden_nodes'].append(num_hidden)
+            stats['connections'].append(num_connections)
+        
+        if stats['hidden_nodes']:
+            stats['avg_hidden'] = sum(stats['hidden_nodes']) / len(stats['hidden_nodes'])
+            stats['min_hidden'] = min(stats['hidden_nodes'])
+            stats['max_hidden'] = max(stats['hidden_nodes'])
+            stats['avg_connections'] = sum(stats['connections']) / len(stats['connections'])
+        
+        return stats
+    
+    def _log_topology_changes(self, prev_stats, new_stats):
+        """Log topology changes between generations."""
+        if prev_stats['hidden_nodes'] and new_stats['hidden_nodes']:
+            prev_avg = prev_stats['avg_hidden']
+            new_avg = new_stats['avg_hidden']
+            prev_min = prev_stats['min_hidden']
+            prev_max = prev_stats['max_hidden']
+            new_min = new_stats['min_hidden']
+            new_max = new_stats['max_hidden']
+            
+            print(f"\n=== Generation {self.generation} Topology Changes ===")
+            print(f"Hidden Nodes: {prev_avg:.1f} avg → {new_avg:.1f} avg (range: {prev_min}-{prev_max} → {new_min}-{new_max})")
+            print(f"Connections: {prev_stats['avg_connections']:.1f} avg → {new_stats['avg_connections']:.1f} avg")
+            
+            if new_avg != prev_avg or new_min != prev_min or new_max != prev_max:
+                print(f"✓ TOPOLOGY CHANGED! Networks are evolving structure.")
+            else:
+                print(f"  (No topology change this generation - weights only)")
+            print("=" * 50)
     
     def get_best_genome(self):
         """Get the best genome from current population."""
