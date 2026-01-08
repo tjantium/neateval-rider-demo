@@ -15,14 +15,6 @@ function NeuralNetworkCanvas({ networkInfo, generation }) {
     // Clear canvas
     ctx.clearRect(0, 0, width, height)
     
-    // Draw generation info
-    if (generation !== undefined && generation !== null) {
-      ctx.fillStyle = '#666'
-      ctx.font = '11px Arial'
-      ctx.textAlign = 'left'
-      ctx.fillText(`Generation: ${generation}`, 10, 20)
-    }
-
     // Layout constants
     const inputX = 50
     const hiddenX = 250
@@ -30,24 +22,91 @@ function NeuralNetworkCanvas({ networkInfo, generation }) {
     const nodeRadius = 20
     const nodeSpacing = 40
     const inputCount = networkInfo.input_names.length
-    const hiddenCount = networkInfo.hidden_values.length
+    
+    // Get weights from network info
+    const weights = networkInfo.weights
+    
+    // Draw generation info and topology info
+    if (generation !== undefined && generation !== null) {
+      ctx.fillStyle = '#666'
+      ctx.font = '11px Arial'
+      ctx.textAlign = 'left'
+      ctx.fillText(`Generation: ${generation}`, 10, 20)
+      
+      // Show topology info (NEAT feature)
+      if (weights.num_hidden !== undefined) {
+        ctx.fillText(`Hidden Nodes: ${weights.num_hidden} (NEAT - topology evolves)`, 10, 35)
+      }
+    }
+    const inputHiddenWeights = weights.input_hidden || []
+    const hiddenOutputWeights = weights.hidden_output || []
+    const inputOutputWeights = weights.input_output || []  // Direct input->output connections (NEAT)
+    const weightChanges = networkInfo.weight_changes || null
+    
+    // Handle dynamic topology - get actual hidden count from weights
+    const hiddenCount = weights.num_hidden !== undefined ? weights.num_hidden : networkInfo.hidden_values.length
+    const hiddenValues = networkInfo.hidden_values || []
 
     // Calculate vertical positions
     const inputStartY = (height - (inputCount - 1) * nodeSpacing) / 2
-    const hiddenStartY = (height - (hiddenCount - 1) * nodeSpacing) / 2
+    const hiddenStartY = hiddenCount > 0 ? (height - (hiddenCount - 1) * nodeSpacing) / 2 : height / 2
+    const outputY = height / 2
 
-    // Get weights from network info
-    const weights = networkInfo.weights
-    const inputHiddenWeights = weights.input_hidden || []
-    const hiddenOutputWeights = weights.hidden_output || []
-    const weightChanges = networkInfo.weight_changes || null
+    // Draw direct input to output connections (NEAT can have these)
+    // When there are no hidden nodes, show all connections (even if weights are small)
+    const showAllConnections = hiddenCount === 0
+    
+    for (let i = 0; i < inputCount; i++) {
+      const inputY = inputStartY + i * nodeSpacing
+      const weight = inputOutputWeights[i] || 0
+      
+      // Show connection if weight is significant OR if there are no hidden nodes (all connections matter)
+      if (Math.abs(weight) > 0.01 || showAllConnections) {
+        let weightChanged = false
+        let changeAmount = 0
+        if (weightChanges && weightChanges.input_output && weightChanges.input_output[i]) {
+          changeAmount = weightChanges.input_output[i] || 0
+          weightChanged = Math.abs(changeAmount) > 0.01
+        }
+        
+        let color = weight > 0 ? '#f44336' : '#2196f3'
+        if (weightChanged) {
+          color = weight > 0 ? '#ff1744' : '#0277bd'
+        }
+        
+        // For very small weights when showing all connections, use minimum visibility
+        const weightMagnitude = showAllConnections && Math.abs(weight) < 0.01 ? 0.01 : Math.abs(weight)
+        const opacity = Math.min(1.0, Math.max(0.3, weightMagnitude * 2))  // Minimum 0.3 opacity
+        const lineWidth = Math.max(1, weightMagnitude * 3)  // Minimum 1px width
+        
+        ctx.strokeStyle = color
+        ctx.lineWidth = weightChanged ? lineWidth + 1 : lineWidth
+        ctx.globalAlpha = weightChanged ? Math.min(1.0, opacity * 0.9) : opacity * 0.6
+        
+        // Draw connection (curved to distinguish from hidden connections)
+        ctx.beginPath()
+        ctx.moveTo(inputX + nodeRadius, inputY)
+        ctx.quadraticCurveTo((inputX + outputX) / 2, inputY - 20, outputX - nodeRadius, outputY)
+        ctx.stroke()
+        
+        // Draw change indicator
+        if (weightChanged && Math.abs(changeAmount) > 0.1) {
+          const midX = (inputX + outputX) / 2
+          const midY = (inputY + outputY) / 2 - 10
+          ctx.fillStyle = changeAmount > 0 ? '#4caf50' : '#ff9800'
+          ctx.beginPath()
+          ctx.arc(midX, midY, 3, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+    }
 
     // Draw connections from input to hidden
     for (let i = 0; i < inputCount; i++) {
       const inputY = inputStartY + i * nodeSpacing
       for (let h = 0; h < hiddenCount; h++) {
         const hiddenY = hiddenStartY + h * nodeSpacing
-        const weight = inputHiddenWeights[i] ? inputHiddenWeights[i][h] : 0
+        const weight = (inputHiddenWeights[i] && inputHiddenWeights[i][h]) ? inputHiddenWeights[i][h] : 0
         
         // Check if this weight changed (for evolution visualization)
         let weightChanged = false
@@ -93,7 +152,9 @@ function NeuralNetworkCanvas({ networkInfo, generation }) {
     // Draw connections from hidden to output
     for (let h = 0; h < hiddenCount; h++) {
       const hiddenY = hiddenStartY + h * nodeSpacing
-      const weight = hiddenOutputWeights[h] ? hiddenOutputWeights[h][0] : 0
+      // Handle both array format [weight] and single value
+      const weight = hiddenOutputWeights[h] ? 
+        (Array.isArray(hiddenOutputWeights[h]) ? hiddenOutputWeights[h][0] : hiddenOutputWeights[h]) : 0
       
       // Check if this weight changed
       let weightChanged = false
@@ -117,13 +178,13 @@ function NeuralNetworkCanvas({ networkInfo, generation }) {
       
       ctx.beginPath()
       ctx.moveTo(hiddenX + nodeRadius, hiddenY)
-      ctx.lineTo(outputX - nodeRadius, hiddenStartY + hiddenCount * nodeSpacing / 2)
+      ctx.lineTo(outputX - nodeRadius, outputY)
       ctx.stroke()
       
       // Draw change indicator
       if (weightChanged && Math.abs(changeAmount) > 0.1) {
         const midX = (hiddenX + outputX) / 2
-        const midY = (hiddenY + hiddenStartY + hiddenCount * nodeSpacing / 2) / 2
+        const midY = (hiddenY + outputY) / 2
         ctx.fillStyle = changeAmount > 0 ? '#4caf50' : '#ff9800'
         ctx.beginPath()
         ctx.arc(midX, midY, 3, 0, Math.PI * 2)
@@ -163,29 +224,32 @@ function NeuralNetworkCanvas({ networkInfo, generation }) {
       ctx.fillText(networkInfo.inputs[idx].toFixed(3), inputX, y + nodeRadius + 12)
     })
 
-    // Draw hidden nodes
-    networkInfo.hidden_values.forEach((val, idx) => {
-      const y = hiddenStartY + idx * nodeSpacing
+    // Draw hidden nodes (handle dynamic count)
+    if (hiddenCount > 0) {
+      for (let idx = 0; idx < hiddenCount; idx++) {
+        const y = hiddenStartY + idx * nodeSpacing
+        const val = hiddenValues[idx] !== undefined ? hiddenValues[idx] : 0.0
 
-      // Draw node
-      ctx.fillStyle = '#fff'
-      ctx.beginPath()
-      ctx.arc(hiddenX, y, nodeRadius, 0, Math.PI * 2)
-      ctx.fill()
-      
-      ctx.strokeStyle = '#000'
-      ctx.lineWidth = 2
-      ctx.stroke()
+        // Draw node
+        ctx.fillStyle = '#fff'
+        ctx.beginPath()
+        ctx.arc(hiddenX, y, nodeRadius, 0, Math.PI * 2)
+        ctx.fill()
+        
+        ctx.strokeStyle = '#000'
+        ctx.lineWidth = 2
+        ctx.stroke()
 
-      // Draw value
-      ctx.fillStyle = '#000'
-      ctx.font = '10px Arial'
-      ctx.textAlign = 'center'
-      ctx.fillText(val.toFixed(3), hiddenX, y + 4)
-    })
+        // Draw value
+        ctx.fillStyle = '#000'
+        ctx.font = '10px Arial'
+        ctx.textAlign = 'center'
+        ctx.fillText(val.toFixed(3), hiddenX, y + 4)
+      }
+    }
 
-    // Draw output node
-    const outputY = hiddenStartY + hiddenCount * nodeSpacing / 2
+    // Draw output node (centered vertically)
+    // outputY is already declared above
     ctx.fillStyle = '#fff3cd'
     ctx.beginPath()
     ctx.arc(outputX, outputY, nodeRadius + 5, 0, Math.PI * 2)

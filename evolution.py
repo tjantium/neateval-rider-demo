@@ -1,9 +1,10 @@
 """
-Evolution system for rider populations.
+Evolution system using NEAT (NeuroEvolution of Augmenting Topologies).
 """
 import random
+import neat
 from rider import Rider
-from neural_network import SimpleNeuralNetwork, create_random_network
+from neat_wrapper import NEATNetwork, create_neat_config, get_network_from_genome
 
 
 # Rider names pool
@@ -13,16 +14,151 @@ RIDER_NAMES = [
 ]
 
 
+class NEATEvolution:
+    """
+    Manages NEAT evolution for the cycling simulation.
+    """
+    
+    def __init__(self, config_path='neat_config.txt', population_size=10):
+        """
+        Initialize NEAT evolution system.
+        
+        Args:
+            config_path: Path to NEAT config file
+            population_size: Size of population
+        """
+        self.config = create_neat_config(config_path)
+        self.config.pop_size = population_size
+        self.population = neat.Population(self.config)
+        self.generation = 0
+        
+        # Add reporters for progress tracking
+        self.population.add_reporter(neat.StdOutReporter(False))  # Disable verbose output
+        
+        # Store current generation's genomes and their fitness
+        self.current_genomes = []
+        self.genome_to_rider = {}  # Map genome_id to rider
+    
+    def create_riders_from_population(self):
+        """
+        Create riders from current NEAT population.
+        
+        Returns:
+            List of Rider objects
+        """
+        riders = []
+        self.current_genomes = list(self.population.population.items())
+        self.genome_to_rider = {}
+        
+        for genome_id, genome in self.current_genomes:
+            # Create network from genome
+            network = get_network_from_genome(genome, self.config)
+            
+            # Assign name
+            name_idx = len(riders) % len(RIDER_NAMES)
+            name = RIDER_NAMES[name_idx]
+            
+            # Create rider
+            rider = Rider(name, network)
+            rider.id = genome_id
+            rider.genome_id = genome_id  # Store for later fitness assignment
+            
+            riders.append(rider)
+            self.genome_to_rider[genome_id] = rider
+        
+        return riders
+    
+    def assign_fitness_from_riders(self, riders):
+        """
+        Assign fitness to genomes based on rider performance.
+        Fitness is based on final position in the race.
+        
+        Args:
+            riders: List of Rider objects after race completion
+        """
+        # Sort riders by position (best first)
+        sorted_riders = sorted(riders, key=lambda r: r.position, reverse=True)
+        
+        # Assign fitness based on position
+        # Best rider gets highest fitness
+        for i, rider in enumerate(sorted_riders):
+            if hasattr(rider, 'genome_id') and rider.genome_id in self.population.population:
+                genome = self.population.population[rider.genome_id]
+                # Fitness = position (in meters) + bonus for top performers
+                fitness = rider.position
+                # Add small bonus for top 3 to encourage competition
+                if i < 3:
+                    fitness += (3 - i) * 10.0
+                genome.fitness = fitness
+    
+    def evolve(self):
+        """
+        Evolve to next generation using NEAT.
+        
+        Returns:
+            List of new Rider objects
+        """
+        # Use NEAT's reproduction to create next generation
+        # This handles speciation, crossover, and mutation
+        self.population.species.speciate(self.config, self.population.population, self.generation)
+        self.population.population = self.population.reproduction.reproduce(
+            self.config, 
+            self.population.species, 
+            self.config.pop_size,
+            self.generation
+        )
+        self.generation += 1
+        
+        # Create new riders from evolved population
+        return self.create_riders_from_population()
+    
+    def get_best_genome(self):
+        """Get the best genome from current population."""
+        if not self.current_genomes:
+            return None
+        
+        # Find genome with highest fitness
+        best_genome = None
+        best_fitness = float('-inf')
+        
+        for genome_id, genome in self.current_genomes:
+            if genome.fitness is not None and genome.fitness > best_fitness:
+                best_fitness = genome.fitness
+                best_genome = genome
+        
+        return best_genome
+    
+    def reset_population(self):
+        """Reset to initial population (new random genomes)."""
+        self.population = neat.Population(self.config)
+        self.generation = 0
+        self.current_genomes = []
+        self.genome_to_rider = {}
+
+
+# Global NEAT evolution instance
+_neat_evolution = None
+
+
+def initialize_neat_evolution(config_path='neat_config.txt', population_size=10):
+    """Initialize the global NEAT evolution system."""
+    global _neat_evolution
+    _neat_evolution = NEATEvolution(config_path, population_size)
+    return _neat_evolution
+
+
+def get_neat_evolution():
+    """Get the global NEAT evolution instance."""
+    global _neat_evolution
+    if _neat_evolution is None:
+        _neat_evolution = initialize_neat_evolution()
+    return _neat_evolution
+
+
 def create_initial_population(size=10):
-    """Create initial population of riders with random neural networks."""
-    riders = []
-    for i in range(size):
-        name = RIDER_NAMES[i % len(RIDER_NAMES)]
-        network = create_random_network()
-        rider = Rider(name, network)
-        rider.id = i  # Give each rider a unique ID
-        riders.append(rider)
-    return riders
+    """Create initial population of riders using NEAT."""
+    evolution = get_neat_evolution()
+    return evolution.create_riders_from_population()
 
 
 def select_top_riders(riders, num_top=5):
@@ -40,57 +176,28 @@ def select_top_riders(riders, num_top=5):
     return sorted_riders[:num_top]
 
 
-def evolve_population(top_riders, population_size=10, mutation_size=1.0, num_weights_to_mutate=20):
+def evolve_population(riders, population_size=10, mutation_size=1.0, num_weights_to_mutate=20):
     """
-    Evolve population from top riders.
+    Evolve population using NEAT.
     
     Args:
-        top_riders: List of top-performing riders
-        population_size: Size of new population
-        mutation_size: Standard deviation for mutations
-        num_weights_to_mutate: Number of weights to mutate per mutated individual
+        riders: List of riders from current race
+        population_size: Size of population (ignored, uses NEAT config)
+        mutation_size: Mutation size (ignored, uses NEAT config)
+        num_weights_to_mutate: Number of weights to mutate (ignored, uses NEAT config)
     
     Returns:
         New population of riders
     """
-    new_population = []
+    evolution = get_neat_evolution()
     
-    # Keep some exact copies - but give them unique names
-    num_copies = min(len(top_riders), population_size // 2)
-    for i in range(num_copies):
-        rider = top_riders[i % len(top_riders)]
-        new_rider = Rider(rider.name, rider.network.copy())
-        new_rider.id = len(new_population)  # Unique ID
-        # Ensure unique name by cycling through names
-        name_idx = len(new_population) % len(RIDER_NAMES)
-        new_rider.name = RIDER_NAMES[name_idx]
-        new_population.append(new_rider)
+    # Assign fitness to genomes based on rider performance
+    evolution.assign_fitness_from_riders(riders)
     
-    # Create mutated versions
-    while len(new_population) < population_size:
-        # Select a parent (prefer better performers)
-        parent_idx = random.choices(
-            range(len(top_riders)),
-            weights=[len(top_riders) - i for i in range(len(top_riders))],
-            k=1
-        )[0]
-        
-        parent = top_riders[parent_idx]
-        
-        # Create mutated copy
-        new_network = parent.network.copy()
-        new_network.mutate(mutation_size, num_weights_to_mutate)
-        
-        # Assign unique name - use parent name but add a variant indicator
-        # Cycle through names to ensure variety
-        name_idx = len(new_population) % len(RIDER_NAMES)
-        new_name = RIDER_NAMES[name_idx]
-        
-        new_rider = Rider(new_name, new_network)
-        new_rider.id = len(new_population)  # Unique ID
-        new_population.append(new_rider)
+    # Evolve to next generation
+    new_riders = evolution.evolve()
     
-    return new_population
+    return new_riders
 
 
 def reset_riders(riders):
@@ -105,3 +212,9 @@ def reset_riders(riders):
         rider.max_speed = 0.0
         rider.total_energy = 0.0
 
+
+def reset_evolution():
+    """Reset the evolution system (creates new random population)."""
+    evolution = get_neat_evolution()
+    evolution.reset_population()
+    return evolution.create_riders_from_population()

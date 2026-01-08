@@ -9,8 +9,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Features
 
 - Real-time cycling race simulation with physics-based mechanics
-- Neural network-controlled riders that evolve over generations
-- Interactive visualization of neural networks and race progress
+- **NEAT (NeuroEvolution of Augmenting Topologies)** - networks evolve both topology and weights
+- Networks start minimal and can grow/shrink over generations (add/remove nodes and connections)
+- Interactive visualization of dynamic neural network topologies
+- Real-time visualization of topology changes (new nodes, new connections appear over generations)
 - Configurable evolution parameters and race settings
 
 ## Setup

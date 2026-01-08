@@ -1,10 +1,10 @@
 """
 Rider class with neural network controller.
+Supports both NEAT networks and simple networks.
 """
 import numpy as np
 import random
 from physics import AEROBIC_THRESHOLD, WPRIME
-from neural_network import create_random_network
 
 
 class Rider:
@@ -14,10 +14,18 @@ class Rider:
         
         Args:
             name: Rider name
-            network: Neural network (if None, will be created)
+            network: Neural network (NEATNetwork or SimpleNeuralNetwork)
         """
         self.name = name
-        self.network = network if network is not None else create_random_network()
+        if network is None:
+            # Fallback: create simple network if NEAT not available
+            try:
+                from neural_network import create_random_network
+                self.network = create_random_network()
+            except ImportError:
+                raise ValueError("Network must be provided")
+        else:
+            self.network = network
         
         # Physical state
         self.position = 0.0  # meters
